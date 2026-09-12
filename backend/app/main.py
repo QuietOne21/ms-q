@@ -3,6 +3,11 @@ from fastapi import FastAPI
 from app.database import engine
 from sqlalchemy import text
 
+from app.database import engine, Base
+from app.models import user, restaurant
+
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 
 @app.get("/health")
