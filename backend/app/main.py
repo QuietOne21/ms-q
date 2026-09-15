@@ -4,7 +4,8 @@ from app.database import engine
 from sqlalchemy import text
 
 from app.database import engine, Base
-from app.models import user, restaurant, restaurant_table, menu_category, menu_item, reservation
+from app.models import (user, restaurant, restaurant_table, menu_category,
+                        menu_item, reservation, payment, order, review)
 
 Base.metadata.create_all(bind=engine)
 
