@@ -7,9 +7,13 @@ from app.database import engine, Base
 from app.models import (user, restaurant, restaurant_table, menu_category,
                         menu_item, reservation, payment, order, review)
 
+from app.routes import auth
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.include_router(auth.router)
 
 @app.get("/health")
 def health_check():
