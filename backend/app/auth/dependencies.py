@@ -6,6 +6,8 @@ from app.database import sessionLocal
 from app.models.user import User
 from app.auth.jwt import decode_access_token
 
+from app.models.user import UserRole
+
 security_scheme = HTTPBearer()
 
 def get_db():
@@ -40,3 +42,13 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+def require_role(*allowed_roles: UserRole):
+    def role_checker(current: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action",
+           )
+        return current_user
+    return role_checker

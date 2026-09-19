@@ -11,6 +11,9 @@ from app.auth.jwt import create_access_token
 
 from app.auth.dependencies import get_current_user
 
+from app.auth.dependencies import require_role
+from app.models.user import UserRole
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 def get_db():
@@ -50,4 +53,8 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.get("/admin-only-test", response_model=UserResponse)
+def admin_only_test(current_user: User = Depends(require_role(UserRole.res_admin))):
     return current_user
