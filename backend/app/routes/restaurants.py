@@ -39,6 +39,16 @@ def get_restaurant(restaurant_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Restaurant not found")
     return restaurant
 
+
+def get_owned_restaurant(restaurant_id: int, current_user: User, db: Session) -> Restaurant:
+    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    if restaurant.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not own this restaurant")
+    return restaurant
+
 @router.put("/{restaurant_id}", response_model=RestaurantResponse)
 def update_restaurant(
     restaurant_id: int,
@@ -46,15 +56,7 @@ def update_restaurant(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.res_admin)),
 ):
-    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
-    if not restaurant:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
-
-    if restaurant.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not own this restaurant",
-        )
+    restaurant = get_owned_restaurant(restaurant_id, current_user, db)
     restaurant.name = data.name
     restaurant.description = data.description
     restaurant.cusine_type = data.cusine_type
@@ -71,16 +73,8 @@ def delete_restaurant(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.res_admin)),
 ):
-    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
-    if not restaurant:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
+   restaurant = get_owned_restaurant(restaurant_id, current_user, db)
 
-    if restaurant.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not own this restaurant",
-        )
-
-    db.delete(restaurant)
-    db.commit()
+   db.delete(restaurant)
+   db.commit()
 
