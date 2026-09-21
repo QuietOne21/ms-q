@@ -7,9 +7,7 @@ from app.database import engine, Base
 from app.models import (user, restaurant, restaurant_table, menu_category,
                         menu_item, reservation, payment, order, review)
 
-from app.routes import auth, restaurants, tables
-
-from app.routes import auth, restaurants
+from app.routes import auth, restaurants, tables, menu_categories
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,6 +17,8 @@ app.include_router(auth.router)
 app.include_router(restaurants.router)
 
 app.include_router(tables.router)
+
+app.include_router(menu_categories.router)
 
 @app.get("/health")
 def health_check():
