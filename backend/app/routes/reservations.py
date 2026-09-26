@@ -9,6 +9,11 @@ from app.services.availability import find_available_table
 
 from app.models.reservation import ReservationStatus
 
+from pydantic import BaseModel
+from app.routes.restaurants import get_owned_restaurant
+from app.auth.dependencies import require_role
+from app.models.user import UserRole
+
 router = APIRouter(prefix="/reservations", tags=["reservations"])
 
 @router.post("/", response_model=ReservationResponse)
@@ -73,6 +78,53 @@ def cancel_reservation(
         )
 
     reservation.status = ReservationStatus.cancelled
+    db.commit()
+    db.refresh(reservation)
+    return reservation
+
+
+
+
+# Admin
+class ReservationStatusUpdate(BaseModel):
+    status: ReservationStatus
+
+ADMIN_SETTABLE_STATUS = {
+    ReservationStatus.confirmed,
+    ReservationStatus.completed,
+    ReservationStatus.no_show,
+}
+
+@router.get("/restaurant/{restaurant_id}", response_model=list[ReservationResponse])
+def list_restaurant_reservations(
+    restaurant_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.res_admin)),
+):
+    get_owned_restaurant(restaurant_id, current_user, db)
+    return db.query(Reservation).filter(Reservation.restaurant_id == restaurant_id).all()
+
+@router.put("/{reservation_id}/status", response_model=ReservationResponse)
+def update_reservation_status(
+    reservation_id: int,
+    data: ReservationStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.res_admin)),
+):
+    reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
+
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+
+    get_owned_restaurant(reservation.restaurant_id, current_user, db)
+
+    if data.status not in ADMIN_SETTABLE_STATUS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Admin cannot set status to '{data.status.value}' ",
+        )
+
+    reservation.status = data.status
     db.commit()
     db.refresh(reservation)
     return reservation
