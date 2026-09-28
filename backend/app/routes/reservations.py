@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter,HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from app.auth.dependencies import get_db, get_current_user
 from app.models.user import User
@@ -81,7 +81,6 @@ def cancel_reservation(
     db.commit()
     db.refresh(reservation)
     return reservation
-
 
 
 

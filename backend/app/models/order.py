@@ -3,6 +3,8 @@ from sqlalchemy.sql import func
 from app.database import Base
 import enum
 
+from sqlalchemy.orm import relationship
+
 class OrderStatus(str, enum.Enum):
     pending = "pending"
     confirmed = "confirmed"
@@ -15,6 +17,7 @@ class Order(Base):
     reservation_id = Column(Integer, ForeignKey("reservations.id"), nullable=False, unique=True)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.pending)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    items = relationship("OrderItem", backref="order")
 
 
 class OrderItem(Base):
