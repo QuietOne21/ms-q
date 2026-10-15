@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from decimal import Decimal
 
 class RestaurantCreate(BaseModel):
     name: str
@@ -8,6 +9,7 @@ class RestaurantCreate(BaseModel):
     cusine_type: Optional[str] = None
     address: Optional[str] = None
     phone: Optional[str] = None
+    reservation_fee: Decimal = Decimal("0.00")
 
 class RestaurantResponse(BaseModel):
     id: int
@@ -17,6 +19,7 @@ class RestaurantResponse(BaseModel):
     cusine_type: Optional[str]
     address: Optional[str]
     phone: Optional[str]
+    reservation_fee: Decimal
     created_at: datetime
 
     class Config:

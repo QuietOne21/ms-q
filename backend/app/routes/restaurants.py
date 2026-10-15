@@ -22,6 +22,7 @@ def create_restaurant(
         cusine_type=data.cusine_type,
         address=data.address,
         phone=data.phone,
+        reservation_fee=data.reservation_fee,
     )
     db.add(new_restaurant)
     db.commit()
@@ -62,6 +63,7 @@ def update_restaurant(
     restaurant.cusine_type = data.cusine_type
     restaurant.address = data.address
     restaurant.phone = data.phone
+    restaurant.reservation_fee = data.reservation_fee
 
     db.commit()
     db.refresh(restaurant)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric
 from sqlalchemy.sql import func
 from app.database import Base
 from sqlalchemy.orm import relationship
@@ -14,5 +14,6 @@ class Restaurant(Base):
     address = Column(String(50))
     phone = Column(String(50))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    reservation_fee = Column(Numeric(10, 2), nullable=False, default=0)
 
     owner = relationship("User")

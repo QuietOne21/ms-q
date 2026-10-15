@@ -18,3 +18,4 @@ class Payment(Base):
     status = Column(Enum(PaymentStatus), nullable=False, default=PaymentStatus.pending)
     payment_reference = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    reservation_fee = Column(Numeric(10, 2), nullable=False, default=0)
