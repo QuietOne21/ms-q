@@ -10,6 +10,8 @@ from app.models.restaurant import Restaurant
 from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.services.payment_service import process_payment
 
+PAYABLE_STATUSES = (ReservationStatus.pending, ReservationStatus.confirmed)
+
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 @router.post("/", response_model=PaymentResponse)
@@ -25,6 +27,12 @@ def create_payment(
 
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
+
+    if reservation.status not in PAYABLE_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot pay for a reservation with status '{reservation.status.value}'",
+        )
 
     existing_payment = db.query(Payment).filter(Payment.reservation_id == reservation.id).first()
     if existing_payment:
