@@ -3,7 +3,22 @@ from sqlalchemy.orm import Session
 from app.models.reservation import Reservation, ReservationStatus
 from app.models.restaurant_table import RestaurantTable
 
+from sqlalchemy import func, text
+
 RESERVATION_DURATION_MINUTES = 90
+
+PENDING_HOLD_MINUTES = 15
+MAX_PENDING_PER_CUSTOMER = 3
+
+def hold_cutoff():
+    return func.date_sub(func.now(), text(f"INTERVAL {PENDING_HOLD_MINUTES} MINUTE"))
+
+def expire_stale_pending_reservations(db: Session, restaurant_id: int) -> None:
+    db.query(Reservation).filter(
+        Reservation.restaurant_id == restaurant_id,
+        Reservation.status == ReservationStatus.pending,
+        Reservation.created_at < hold_cutoff(),
+    ).update({Reservation.status: ReservationStatus.cancelled}, synchronize_session=False)
 
 def _reservation_window(res_date: date, res_time: time) -> tuple[datetime, datetime]:
     start = datetime.combine(res_date, res_time)

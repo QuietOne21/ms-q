@@ -10,6 +10,8 @@ from app.models.restaurant import Restaurant
 from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.services.payment_service import process_payment
 
+from app.services.availability import expire_stale_pending_reservations
+
 PAYABLE_STATUSES = (ReservationStatus.pending, ReservationStatus.confirmed)
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -27,6 +29,11 @@ def create_payment(
 
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
+
+    if reservation.status == ReservationStatus.pending:
+        expire_stale_pending_reservations(db, reservation.restaurant_id)
+        db.commit()
+        db.refresh(reservation)
 
     if reservation.status not in PAYABLE_STATUSES:
         raise HTTPException(

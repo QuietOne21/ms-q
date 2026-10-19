@@ -5,7 +5,12 @@ from app.models.user import User
 from app.models.restaurant import Restaurant
 from app.models.reservation import Reservation
 from app.schemas.reservation import ReservationCreate, ReservationResponse
-from app.services.availability import find_available_table
+from app.services.availability import (
+    find_available_table,
+    expire_stale_pending_reservations,
+    hold_cutoff,
+    MAX_PENDING_PER_CUSTOMER,
+)
 
 from app.models.reservation import ReservationStatus
 
@@ -30,6 +35,20 @@ def create_reservation(
     )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    expire_stale_pending_reservations(db, data.restaurant_id)
+
+    active_holds = db.query(Reservation).filter(
+        Reservation.customer_id == current_user.id,
+        Reservation.status == ReservationStatus.pending,
+        Reservation.created_at >= hold_cutoff(),
+    ).count()
+
+    if active_holds >= MAX_PENDING_PER_CUSTOMER:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You already have {MAX_PENDING_PER_CUSTOMER} unpaid reservations. Pay for or cancel one before booking another."
+        )
 
     table = find_available_table(
         db, data.restaurant_id, data.party_size, data.date, data.time
