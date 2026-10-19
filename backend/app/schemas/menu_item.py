@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Filed
 from decimal import Decimal
 from typing import Optional
 
@@ -6,7 +6,7 @@ class MenuItemCreate(BaseModel):
     category_id: int
     name: str
     description: Optional[str] = None
-    price: Decimal
+    price: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
     image_url: Optional[str] = None
 
 class MenuItemResponse(BaseModel):

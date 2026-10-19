@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date, time, datetime
 from typing import Optional
 from app.models.reservation import ReservationStatus
@@ -7,7 +7,7 @@ class ReservationCreate(BaseModel):
     restaurant_id: int
     date: date
     time: time
-    party_size: int
+    party_size: int = Field(gt=0, le=20)
     special_requests: Optional[str] = None
 
 class ReservationResponse(BaseModel):

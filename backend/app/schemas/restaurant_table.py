@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class TableCreate(BaseModel):
     label: str
-    seats: int
+    seats: int = Field(gt=0, le=20)
 
 class TableResponse(BaseModel):
     id: int

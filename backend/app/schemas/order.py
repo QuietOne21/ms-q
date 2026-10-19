@@ -1,15 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from decimal import Decimal
 from datetime import datetime
 from app.models.order import OrderStatus
 
 class OrderItemCreate(BaseModel):
     menu_item_id: int
-    quantity: int
+    quantity: int = Field(gt=0, le=100)
 
 class OrderCreate(BaseModel):
     reservation_id: int
-    items: list[OrderItemCreate]
+    items: list[OrderItemCreate] = Field(min_length=1, max_length=50)
 
 class OrderItemResponse(BaseModel):
     id: int

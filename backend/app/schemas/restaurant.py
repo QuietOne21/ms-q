@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
 from decimal import Decimal
@@ -9,7 +9,7 @@ class RestaurantCreate(BaseModel):
     cusine_type: Optional[str] = None
     address: Optional[str] = None
     phone: Optional[str] = None
-    reservation_fee: Decimal = Decimal("0.00")
+    reservation_fee: Decimal = Field(default=Decimal("0.00"), ge=0, max_digits=10, decimal_places=2)
 
 class RestaurantResponse(BaseModel):
     id: int
