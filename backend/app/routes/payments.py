@@ -48,12 +48,10 @@ def create_payment(
 
     result = process_payment(float(amount))
 
-    payment = Payment(
-        reservation_id = reservation.id,
-        amount = amount,
-        status = PaymentStatus.successful if result["success"] else PaymentStatus.failed,
-        payment_reference = result["reference"],
-    )
+    payment = existing_payment or Payment(reservation_id=reservation.id)
+    payment.amount = amount
+    payment.status = PaymentStatus.successful if result["success"] else PaymentStatus.failed
+    payment.payment_reference = result["reference"]
     db.add(payment)
 
     if result["success"]:
@@ -65,7 +63,7 @@ def create_payment(
     if not result["success"]:
         raise HTTPException(
             status_code= 402,
-            detail="Payment. Please try again.",
+            detail="Payment failed. Please try again.",
         )
 
     return payment
