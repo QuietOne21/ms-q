@@ -6,7 +6,9 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: str
-    role: UserRole = UserRole.customer
+
+class AdminUserCreate(UserCreate):
+    invite_code: str
 
 class UserResponse(BaseModel):
     id: int

@@ -1,8 +1,13 @@
+import os
+import secrets
+
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import sessionLocal
-from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse
+
+from app.models.user import User, UserRole
+from app.schemas.user import UserCreate, UserResponse, AdminUserCreate, UserLogin, Token
 from app.auth.security import hashed_pass
 
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
@@ -23,8 +28,7 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/register", response_model=UserResponse)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+def _create_user(db: Session, user_data: UserCreate, role: UserRole) -> User:
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -33,12 +37,27 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         email=user_data.email,
         hashed_pass=hashed_pass(user_data.password),
         full_name=user_data.full_name,
-        role=user_data.role,
+        role=role,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+@router.post("/register", response_model=UserResponse)
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+   return _create_user(db, user_data, UserRole.customer)
+
+
+@router.post("/register/res-admin", response_model=UserResponse)
+def register_restaurant_admin(user_data: AdminUserCreate, db: Session = Depends(get_db)):
+    expected_code = os.getenv("ADMIN_INVITE_CODE")
+    if not expected_code or not secrets.compare_digest(
+        user_data.invite_code.encode(), expected_code.encode()
+    ):
+        raise HTTPException(status_code=403, detail="Invalid invite code")
+
+    return _create_user(db, user_data, UserRole.res_admin)
 
 
 @router.post("/login", response_model=Token)

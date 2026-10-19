@@ -7,11 +7,12 @@ class Review(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reservation_id = Column(Integer, ForeignKey("reservations.id"), nullable=False, unique=True)
-    customer_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
+    customer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    restaurant_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
     rating = Column(Integer, nullable=False)
     comment = Column(String(2000), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 5", name="rating_range"),
     )
