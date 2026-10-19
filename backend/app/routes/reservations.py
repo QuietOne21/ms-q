@@ -22,7 +22,12 @@ def create_reservation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    restaurant = db.query(Restaurant).filter(Restaurant.id == data.restaurant_id).first()
+    restaurant = (
+        db.query(Restaurant)
+        .filter(Restaurant.id == data.restaurant_id)
+        .with_for_update()
+        .first()
+    )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 

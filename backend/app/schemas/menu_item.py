@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Filed
+from pydantic import BaseModel, Field
 from decimal import Decimal
 from typing import Optional
 
