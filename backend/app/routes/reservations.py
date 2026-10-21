@@ -19,6 +19,9 @@ from app.routes.restaurants import get_owned_restaurant
 from app.auth.dependencies import require_role
 from app.models.user import UserRole
 
+from datetime import datetime
+from sqlalchemy import func, select
+
 router = APIRouter(prefix="/reservations", tags=["reservations"])
 
 @router.post("/", response_model=ReservationResponse)
@@ -112,11 +115,11 @@ def cancel_reservation(
 class ReservationStatusUpdate(BaseModel):
     status: ReservationStatus
 
-ADMIN_SETTABLE_STATUS = {
-    ReservationStatus.confirmed,
-    ReservationStatus.completed,
-    ReservationStatus.no_show,
+ALLOWED_TRANSITIONS = {
+    ReservationStatus.pending: {ReservationStatus.confirmed},
+    ReservationStatus.confirmed: {ReservationStatus.completed, ReservationStatus.no_show},
 }
+MUST_HAVE_STARTED = {ReservationStatus.completed, ReservationStatus.no_show}
 
 @router.get("/restaurant/{restaurant_id}", response_model=list[ReservationResponse])
 def list_restaurant_reservations(
@@ -135,17 +138,26 @@ def update_reservation_status(
     current_user: User = Depends(require_role(UserRole.res_admin)),
 ):
     reservation = db.query(Reservation).filter(Reservation.id == reservation_id).first()
-
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
 
     get_owned_restaurant(reservation.restaurant_id, current_user, db)
 
-    if data.status not in ADMIN_SETTABLE_STATUS:
+    allowed = ALLOWED_TRANSITIONS.get(reservation.status, set())
+    if data.status not in allowed:
         raise HTTPException(
             status_code=400,
-            detail=f"Admin cannot set status to '{data.status.value}' ",
+            detail=f"Cannot change a reservation from '{reservation.status.value}' to '{data.status.value}'"
         )
+
+    if data.status in MUST_HAVE_STARTED:
+        now = db.scalar(select(func.now()))
+        starts_at = datetime.combine(reservation.date, reservation.time)
+        if starts_at > now:
+            raise HTTPException(
+                status_code=400,
+                detail="A reservation can only be marked completed or no showed after its start time",
+            )
 
     reservation.status = data.status
     db.commit()
