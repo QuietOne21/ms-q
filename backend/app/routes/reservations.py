@@ -19,8 +19,10 @@ from app.routes.restaurants import get_owned_restaurant
 from app.auth.dependencies import require_role
 from app.models.user import UserRole
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import func, select
+
+MAX_ADVANCE_DAYS = 90
 
 router = APIRouter(prefix="/reservations", tags=["reservations"])
 
@@ -30,6 +32,16 @@ def create_reservation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    now = db.scalar(select(func.now()))
+    starts_at = datetime.combine(data.date, data.time)
+    if starts_at <= now:
+        raise HTTPException(status_code=400, detail="Reservation must be for a future date and time")
+    if starts_at > now + timedelta(days=MAX_ADVANCE_DAYS):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Reservations can only be made up to {MAX_ADVANCE_DAYS} days ahead."
+        )
+    
     restaurant = (
         db.query(Restaurant)
         .filter(Restaurant.id == data.restaurant_id)
