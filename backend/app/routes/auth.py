@@ -19,6 +19,9 @@ from app.auth.dependencies import get_current_user
 from app.auth.dependencies import require_role
 from app.models.user import UserRole
 
+from fastapi import Request
+from app.rate_limit import limiter
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 def get_db():
@@ -61,7 +64,8 @@ def register_restaurant_admin(user_data: AdminUserCreate, db: Session = Depends(
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
 
     if not user or not verify_pass(credentials.password, user.hashed_pass):

@@ -9,10 +9,18 @@ from app.models import (user, restaurant, restaurant_table, menu_category,
 
 from app.routes import auth, restaurants, tables, menu_categories, menu_items, reservations, orders, payments, reviews
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.rate_limit import limiter
+
+
 Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(auth.router)
 app.include_router(restaurants.router)
