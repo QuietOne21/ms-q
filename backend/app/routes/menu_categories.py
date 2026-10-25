@@ -6,6 +6,8 @@ from app.models.menu_category import MenuCategory
 from app.schemas.menu_category import MenuCategoryCreate, MenuCategoryResponse
 from app.routes.restaurants import get_owned_restaurant
 
+from app.services.db_helpers import delete_or_conflict
+
 router = APIRouter(prefix="/restaurants/{restaurant_id}/categories", tags=["menu"])
 
 @router.post("/", response_model=MenuCategoryResponse)
@@ -44,5 +46,7 @@ def delete_category(
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    db.delete(category)
-    db.commit()
+    delete_or_conflict(
+        db, category, 
+        "This category still contains menu items. Delete or move them first."
+    )

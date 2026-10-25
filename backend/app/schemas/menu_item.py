@@ -21,3 +21,6 @@ class MenuItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MenuItemAvailabilityUpdate(BaseModel):
+    is_available: bool

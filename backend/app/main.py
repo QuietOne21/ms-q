@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from app.database import engine
 from sqlalchemy import text
@@ -13,14 +13,27 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.rate_limit import limiter
 
+import logging
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
+
 
 Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI()
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+logger = logging.getLogger("uvicorn.error")
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    logger.warning("Integrity error on %s %s: %s", request.method, request.url.path, exc.orig)
+    return JSONResponse(
+        status_code=409,
+        content={"detail": "This request conflicts with existing data"},
+    )
 
 app.include_router(auth.router)
 app.include_router(restaurants.router)

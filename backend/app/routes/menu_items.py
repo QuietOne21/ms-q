@@ -4,8 +4,10 @@ from app.auth.dependencies import get_db, require_role
 from app.models.user import User, UserRole
 from app.models.menu_item import MenuItem
 from app.models.menu_category import MenuCategory
-from app.schemas.menu_item import MenuItemCreate, MenuItemResponse
+from app.schemas.menu_item import MenuItemCreate, MenuItemResponse, MenuItemAvailabilityUpdate
 from app.routes.restaurants import get_owned_restaurant
+
+from app.services.db_helpers import delete_or_conflict
 
 router = APIRouter(prefix="/restaurants/{restaurant_id}/items", tags=["menu"])
 
@@ -96,5 +98,30 @@ def delete_item(
     if not item:
         raise HTTPException(status_code=404, detail="Menu item not found")
 
-    db.delete(item)
+    delete_or_conflict(
+        db, item,
+        "This item appears in past orders and cannot be deleted. Mark it unavailable instead.",
+    )
+
+@router.patch("/{item_id}/availability", response_model=MenuItemResponse)
+def set_item_availabilty(
+    restaurant_id: int,
+    item_id: int,
+    data: MenuItemAvailabilityUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.res_admin)),
+):
+    get_owned_restaurant(restaurant_id, current_user, db)
+
+    item = db.query(MenuItem).filter(
+        MenuItem.id == item_id,
+        MenuItem.restaurant_id == restaurant_id,
+    ).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Menu item not found")
+
+    item.is_available = data.is_available
     db.commit()
+    db.refresh(item)
+    return item

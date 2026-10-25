@@ -7,6 +7,8 @@ from app.schemas.restaurant import RestaurantCreate, RestaurantResponse
 
 from fastapi import HTTPException, status
 
+from app.services.db_helpers import delete_or_conflict
+
 router = APIRouter(prefix="/restaurants", tags=["restaurants"])
 
 @router.post("/", response_model=RestaurantResponse)
@@ -77,6 +79,9 @@ def delete_restaurant(
 ):
    restaurant = get_owned_restaurant(restaurant_id, current_user, db)
 
-   db.delete(restaurant)
-   db.commit()
+   delete_or_conflict(
+       db, restaurant,
+        "This restaurant still has related data. Delete its tables, menu items and "
+        "categories first. Restaurants with reservations cannot be deleted.",
+    )
 

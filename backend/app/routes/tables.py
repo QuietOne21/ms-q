@@ -6,6 +6,8 @@ from app.models.restaurant_table import RestaurantTable
 from app.schemas.restaurant_table import TableCreate, TableResponse
 from app.routes.restaurants import get_owned_restaurant
 
+from app.services.db_helpers import delete_or_conflict
+
 router = APIRouter(prefix="/restaurants/{restaurant_id}/tables", tags=["tables"])
 
 @router.post("/", response_model=TableResponse)
@@ -43,5 +45,4 @@ def delete_table(
     if not table:
         raise HTTPException(status_code=404, detail="Table not found")
 
-    db.delete(table)
-    db.commit()
+    delete_or_conflict(db, table, "This table has reservations and cannot be deleted.")
