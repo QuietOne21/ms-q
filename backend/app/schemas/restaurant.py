@@ -4,11 +4,11 @@ from typing import Optional
 from decimal import Decimal
 
 class RestaurantCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    cusine_type: Optional[str] = None
-    address: Optional[str] = None
-    phone: Optional[str] = None
+    name: str = Field(min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None, max_length=1000)
+    cusine_type: Optional[str] = Field(default=None, max_length=100)
+    address: Optional[str] = Field(default=None, max_length=255)
+    phone: Optional[str] = Field(default=None, max_length=50) 
     reservation_fee: Decimal = Field(default=Decimal("0.00"), ge=0, max_digits=10, decimal_places=2)
 
 class RestaurantResponse(BaseModel):

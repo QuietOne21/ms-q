@@ -8,7 +8,7 @@ class ReservationCreate(BaseModel):
     date: date
     time: time
     party_size: int = Field(gt=0, le=20)
-    special_requests: Optional[str] = None
+    special_requests: Optional[str] = Field(default=None, max_length=1000)
 
 class ReservationResponse(BaseModel):
     id: int

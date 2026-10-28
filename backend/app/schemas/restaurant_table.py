@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 class TableCreate(BaseModel):
-    label: str
+    label: str = Field(min_length=1, max_digits=255)
     seats: int = Field(gt=0, le=20)
 
 class TableResponse(BaseModel):
